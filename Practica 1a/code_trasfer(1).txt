@@ -1,0 +1,128 @@
+# -*- coding: utf-8 -*-
+import numpy as np
+import math
+from sklearn.linear_model import LinearRegression
+from sklearn.datasets import make_regression
+import pandas as pd
+import seaborn as sns
+from matplotlib import pyplot as plt
+
+def regression(x, y):
+    # Creem un objecte de regressió de sklearn
+    regr = LinearRegression()
+
+    # Entrenem el model per a predir y a partir de x
+    regr.fit(x, y)
+
+    # Retornem el model entrenat
+    return regr
+
+def split_data(x, y, train_ratio=0.8):
+    indices = np.arange(x.shape[0])
+    np.random.shuffle(indices)
+    n_train = int(np.floor(x.shape[0]*train_ratio))
+    indices_train = indices[:n_train]
+    indices_val = indices[-n_train:]
+    x_train = x[indices_train, :]
+    y_train = y[indices_train]
+    x_val = x[indices_val, :]
+    y_val = y[indices_val]
+    return x_train, y_train, x_val, y_val
+
+# es pot utilitzar numpy per a calcular el mse
+def mse(v1, v2):
+    return ((v1 - v2)**2).mean()
+
+def standarize(x_train, x_val):
+    mean = x_train.mean(0)
+    std = x_train.std(0)
+    x_t = x_train - mean[None, :]
+    x_t /= std[None, :]
+    x_v = x_val - mean[None, :]
+    x_v /= std[None, :]
+    return x_t, x_v
+
+
+def main():
+    dataframe = pd.read_excel('Residential-Building-Data-Set.xlsx', sheetName=None)
+    dataframe = dataframe.values
+    dataframe = np.delete(dataframe, (0), axis=0)
+    
+    var_list = ['V1','V2','V3','V4','V5','V6','V7','V8',
+                'V11','V12','V13','V14','V15','V16',
+                'V17','V18','V19','V20','V21','V22','V23','V24',
+                'V25','V26','V27','V28','v29', 'V9', 'v10']
+    
+    #Recollim els valors de cada variable, per tant, hem d'agafar cada variable com una
+    #columna. Hem de fer la transposada de la matriu per aconseguir-ho amb la matriu de 
+    #les dades de l'excel
+    #print(dataframe)
+    dataframe_x = dataframe.transpose()
+    print(dataframe_x)
+    output_values = dataframe_x[-2:]
+    y = output_values[-1]
+    #print("Dimensions de y: ")
+    #print(y.shape)    
+    x = dataframe_x[4:31]
+    #x = x.transpose()
+    #print(x)
+    print("Dimensions de x: ")
+    print(x.shape)
+    print("Dimensions de y: ")
+    print(y.shape)
+    #print(y)
+    dataframe_x = dataframe_x[4:31]    
+    x = dataframe_x[4]
+    print("la x es:")
+    print(x)
+    dataframe_corr = np.concatenate([dataframe_x,output_values])
+    m_corr = np.corrcoef(dataframe_corr.astype(float))
+    plt.figure()
+    sns.heatmap(m_corr, xticklabels=var_list, yticklabels=var_list)
+    # Extraiem el primer atribut de x i canviem la mida a #exemples, #dimensions de l'atribut.
+    # En el vostre cas, haureu de triar un atribut com a y, i utilitzar la resta com a x. 
+    #print(x)   
+    #atribut1 = x.reshape(27, x.shape[1])     
+    #atribut1 = x
+    atribut1 = x.reshape(x.shape[0], 1)
+    print(atribut1)
+    print("La regresion es:")
+    regr = regression(atribut1, y) 
+    print("Prediccion:")
+    predicted = regr.predict(atribut1)
+    # Mostrem la predicció del model entrenat en color vermell a la Figura 1
+    plt.figure()
+    plt.scatter(x, y)
+    plt.plot(atribut1[:,0], predicted, 'r')
+    # Mostrem l'error
+    #print(atribut1[:,5])
+    MSE = mse(atribut1[:,0], predicted)
+    print("Mean squeared error: ", MSE)
+    #xn_t, xn_v = standarize(x_train, x_val)
+    # Dividim dades d'entrenament
+    #x_train, y_train, x_val, y_val = split_data(x, y)
+    
+    """for i in range(x_train.shape[1]):
+        x_t = x_train[:,i] # seleccionem atribut i en conjunt de train
+        x_v = x_val[:,i] # seleccionem atribut i en conjunt de val.
+        x_t = np.reshape(x_t,(x_t.shape[0],1))
+        x_v = np.reshape(x_v,(x_v.shape[0],1))    
+        regr = regression(x_t, y_train)    
+        error = mse(y_val, regr.predict(x_v)) # calculem error
+        #print(x_v)
+        #print("Error en atribut %d: %f" %(i, error))
+    
+    x_train = x_train.astype(np.float64)
+    x_val = x_val.astype(np.float64)
+
+    xn_t, xn_v = standarize(x_train, x_val)
+    plt.figure()
+    plt.title("Histograma de l'atribut 0")
+    plt.xlabel("Attribute Value")
+    plt.ylabel("Count")
+    hist = plt.hist(x_t[:,0], bins=11, range=[np.min(x_t[:,0]), np.max(x_t[:,0])], histtype="bar", rwidth=0.8)"""
+
+
+if __name__ == '__main__':
+    main()
+
